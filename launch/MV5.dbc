@@ -1,0 +1,246 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: MV5Node
+VAL_TABLE_ Compensation 3 "Not Available" 2 "reserved" 1 "Compensation Enabled" 0 "Compensation Disabled" ;
+VAL_TABLE_ FigureOfMerit 3 "Not Available" 2 "Error" 1 "Degraded" 0 "Normal" ;
+
+
+BO_ 2364549602 SlopeSensor2: 8 Vector__XXX
+ SG_ RollPitchMeasurementLatency : 56|8@1+ (0.5,0) [0|125] "ms" Vector__XXX
+ SG_ RollAngleFigureOfMerit : 54|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ RollAngleCompensation : 52|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ PitchAngleFigureOfMerit : 50|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ PitchAngleCompensation : 48|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ RollAngle : 24|24@1+ (3.0517578125E-005,-250) [-250|261.999969482422] "deg" Vector__XXX
+ SG_ PitchAngle : 0|24@1+ (3.0517578125E-005,-250) [-250|261.999969482422] "deg" Vector__XXX
+
+BO_ 2364549858 AngularRate: 8 Vector__XXX
+ SG_ AngularRateMeasurementLatency : 56|8@1+ (0.5,0) [0|125] "ms" Vector__XXX
+ SG_ YawRateFigureOfMerit : 52|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ RollRateFigureOfMerit : 50|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ PitchRateFigureOfMerit : 48|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ YawRate : 32|16@1+ (0.0078125,-250) [-250|261.9921875] "deg/s" Vector__XXX
+ SG_ RollRate : 16|16@1+ (0.0078125,-250) [-250|261.9921875] "deg/s" Vector__XXX
+ SG_ PitchRate : 0|16@1+ (0.0078125,-250) [-250|261.9921875] "deg/s" Vector__XXX
+
+BO_ 2297441762 AccelerationSensor: 8 Vector__XXX
+ SG_ VerticalAccelFigureOfMerit : 52|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ LongitudinalAccelFigureOfMerit : 50|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ LateralAccelFigureOfMerit : 48|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ VerticalAcceleration : 32|16@1+ (0.01,-320) [-320|320] "m/s^2" Vector__XXX
+ SG_ LongitudinalAcceleration : 16|16@1+ (0.01,-320) [-320|320] "m/s^2" Vector__XXX
+ SG_ LateralAcceleration : 0|16@1+ (0.01,-320) [-320|320] "m/s^2" Vector__XXX
+
+
+
+CM_ SG_ 2364549602 RollPitchMeasurementLatency "Not Available";
+CM_ SG_ 2364549858 AngularRateMeasurementLatency "Not Available";
+BA_DEF_ BO_  "TpJ1939VarDlc" ENUM  "No","Yes";
+BA_DEF_ SG_  "SigType" ENUM  "Default","Range","RangeSigned","ASCII","Discrete","Control","ReferencePGN","DTC","StringDelimiter","StringLength","StringLengthControl";
+BA_DEF_ SG_  "GenSigEVName" STRING ;
+BA_DEF_ SG_  "GenSigILSupport" ENUM  "No","Yes";
+BA_DEF_ SG_  "GenSigSendType" ENUM  "Cyclic","OnWrite","OnWriteWithRepetition","OnChange","OnChangeWithRepetition","IfActive","IfActiveWithRepetition","NoSigSendType";
+BA_DEF_ BO_  "GenMsgFastOnStart" INT 0 100000;
+BA_DEF_ SG_  "GenSigInactiveValue" INT 0 0;
+BA_DEF_ BO_  "GenMsgCycleTimeFast" INT 0 3600000;
+BA_DEF_ BO_  "GenMsgNrOfRepetition" INT 0 1000000;
+BA_DEF_ SG_  "GenSigStartValue" INT 0 2147483647;
+BA_DEF_ BO_  "GenMsgDelayTime" INT 0 1000;
+BA_DEF_ BO_  "GenMsgILSupport" ENUM  "No","Yes";
+BA_DEF_ BO_  "GenMsgStartDelayTime" INT 0 100000;
+BA_DEF_ BU_  "NodeLayerModules" STRING ;
+BA_DEF_ BU_  "ECU" STRING ;
+BA_DEF_ BU_  "NmJ1939SystemInstance" INT 0 15;
+BA_DEF_ BU_  "NmJ1939System" INT 0 127;
+BA_DEF_ BU_  "NmJ1939ManufacturerCode" INT 0 2047;
+BA_DEF_ BU_  "NmJ1939IndustryGroup" INT 0 7;
+BA_DEF_ BU_  "NmJ1939IdentityNumber" INT 0 2097151;
+BA_DEF_ BU_  "NmJ1939FunctionInstance" INT 0 7;
+BA_DEF_ BU_  "NmJ1939Function" INT 0 255;
+BA_DEF_ BU_  "NmJ1939ECUInstance" INT 0 3;
+BA_DEF_ BU_  "NmJ1939AAC" INT 0 1;
+BA_DEF_ BU_  "NmStationAddress" INT 0 255;
+BA_DEF_ BO_  "GenMsgSendType" ENUM  "cyclic","NotUsed","IfActive","NotUsed","NotUsed","NotUsed","NotUsed","NotUsed","noMsgSendType";
+BA_DEF_ BO_  "GenMsgRequestable" INT 0 1;
+BA_DEF_ BO_  "GenMsgCycleTime" INT 0 3600000;
+BA_DEF_ SG_  "SPN" INT 0 524287;
+BA_DEF_  "DBName" STRING ;
+BA_DEF_  "BusType" STRING ;
+BA_DEF_  "ProtocolType" STRING ;
+BA_DEF_ BO_  "VFrameFormat" ENUM  "StandardCAN","ExtendedCAN","reserved","J1939PG";
+BA_DEF_DEF_  "TpJ1939VarDlc" "No";
+BA_DEF_DEF_  "SigType" "Default";
+BA_DEF_DEF_  "GenSigEVName" "Env@Nodename_@Signame";
+BA_DEF_DEF_  "GenSigILSupport" "Yes";
+BA_DEF_DEF_  "GenSigSendType" "NoSigSendType";
+BA_DEF_DEF_  "GenMsgFastOnStart" 0;
+BA_DEF_DEF_  "GenSigInactiveValue" 0;
+BA_DEF_DEF_  "GenMsgCycleTimeFast" 0;
+BA_DEF_DEF_  "GenMsgNrOfRepetition" 0;
+BA_DEF_DEF_  "GenSigStartValue" 0;
+BA_DEF_DEF_  "GenMsgDelayTime" 0;
+BA_DEF_DEF_  "GenMsgILSupport" "Yes";
+BA_DEF_DEF_  "GenMsgStartDelayTime" 0;
+BA_DEF_DEF_  "NodeLayerModules" "";
+BA_DEF_DEF_  "ECU" "";
+BA_DEF_DEF_  "NmJ1939SystemInstance" 0;
+BA_DEF_DEF_  "NmJ1939System" 0;
+BA_DEF_DEF_  "NmJ1939ManufacturerCode" 0;
+BA_DEF_DEF_  "NmJ1939IndustryGroup" 0;
+BA_DEF_DEF_  "NmJ1939IdentityNumber" 0;
+BA_DEF_DEF_  "NmJ1939FunctionInstance" 0;
+BA_DEF_DEF_  "NmJ1939Function" 0;
+BA_DEF_DEF_  "NmJ1939ECUInstance" 0;
+BA_DEF_DEF_  "NmJ1939AAC" 0;
+BA_DEF_DEF_  "NmStationAddress" 254;
+BA_DEF_DEF_  "GenMsgSendType" "noMsgSendType";
+BA_DEF_DEF_  "GenMsgRequestable" 1;
+BA_DEF_DEF_  "GenMsgCycleTime" 0;
+BA_DEF_DEF_  "SPN" 0;
+BA_DEF_DEF_  "DBName" "";
+BA_DEF_DEF_  "BusType" "CAN";
+BA_DEF_DEF_  "ProtocolType" "J1939";
+BA_DEF_DEF_  "VFrameFormat" "J1939PG";
+BA_ "DBName" "MV5_Network";
+BA_ "NmStationAddress" BU_ MV5Node 226;
+BA_ "NmJ1939AAC" BU_ MV5Node 0;
+BA_ "NmJ1939ECUInstance" BU_ MV5Node 0;
+BA_ "NmJ1939Function" BU_ MV5Node 145;
+BA_ "NmJ1939FunctionInstance" BU_ MV5Node 0;
+BA_ "NmJ1939IndustryGroup" BU_ MV5Node 2;
+BA_ "NmJ1939ManufacturerCode" BU_ MV5Node 569;
+BA_ "NmJ1939System" BU_ MV5Node 17;
+BA_ "NmJ1939SystemInstance" BU_ MV5Node 0;
+BA_ "GenMsgSendType" BO_ 2364549602 0;
+BA_ "GenMsgRequestable" BO_ 2364549602 0;
+BA_ "GenMsgCycleTime" BO_ 2364549602 10;
+BA_ "VFrameFormat" BO_ 2364549602 3;
+BA_ "GenMsgSendType" BO_ 2364549858 0;
+BA_ "GenMsgRequestable" BO_ 2364549858 0;
+BA_ "GenMsgCycleTime" BO_ 2364549858 10;
+BA_ "VFrameFormat" BO_ 2364549858 3;
+BA_ "GenMsgSendType" BO_ 2297441762 0;
+BA_ "GenMsgCycleTime" BO_ 2297441762 10;
+BA_ "GenMsgRequestable" BO_ 2297441762 0;
+BA_ "VFrameFormat" BO_ 2297441762 3;
+BA_ "SigType" SG_ 2364549602 RollPitchMeasurementLatency 1;
+BA_ "GenSigSendType" SG_ 2364549602 RollPitchMeasurementLatency 0;
+BA_ "GenSigInactiveValue" SG_ 2364549602 RollPitchMeasurementLatency 255;
+BA_ "SPN" SG_ 2364549602 RollPitchMeasurementLatency 4982;
+BA_ "SigType" SG_ 2364549602 RollAngleFigureOfMerit 4;
+BA_ "GenSigSendType" SG_ 2364549602 RollAngleFigureOfMerit 0;
+BA_ "GenSigInactiveValue" SG_ 2364549602 RollAngleFigureOfMerit 3;
+BA_ "SPN" SG_ 2364549602 RollAngleFigureOfMerit 4981;
+BA_ "SigType" SG_ 2364549602 RollAngleCompensation 4;
+BA_ "GenSigSendType" SG_ 2364549602 RollAngleCompensation 0;
+BA_ "GenSigInactiveValue" SG_ 2364549602 RollAngleCompensation 3;
+BA_ "SPN" SG_ 2364549602 RollAngleCompensation 4980;
+BA_ "SigType" SG_ 2364549602 PitchAngleFigureOfMerit 4;
+BA_ "GenSigSendType" SG_ 2364549602 PitchAngleFigureOfMerit 0;
+BA_ "GenSigInactiveValue" SG_ 2364549602 PitchAngleFigureOfMerit 3;
+BA_ "SPN" SG_ 2364549602 PitchAngleFigureOfMerit 4979;
+BA_ "SigType" SG_ 2364549602 PitchAngleCompensation 4;
+BA_ "GenSigSendType" SG_ 2364549602 PitchAngleCompensation 0;
+BA_ "GenSigInactiveValue" SG_ 2364549602 PitchAngleCompensation 3;
+BA_ "SPN" SG_ 2364549602 PitchAngleCompensation 4978;
+BA_ "SigType" SG_ 2364549602 RollAngle 2;
+BA_ "GenSigSendType" SG_ 2364549602 RollAngle 0;
+BA_ "GenSigInactiveValue" SG_ 2364549602 RollAngle 16777215;
+BA_ "SPN" SG_ 2364549602 RollAngle 4977;
+BA_ "SigType" SG_ 2364549602 PitchAngle 2;
+BA_ "GenSigSendType" SG_ 2364549602 PitchAngle 0;
+BA_ "GenSigInactiveValue" SG_ 2364549602 PitchAngle 16777215;
+BA_ "SPN" SG_ 2364549602 PitchAngle 4976;
+BA_ "SigType" SG_ 2364549858 AngularRateMeasurementLatency 1;
+BA_ "GenSigSendType" SG_ 2364549858 AngularRateMeasurementLatency 0;
+BA_ "GenSigInactiveValue" SG_ 2364549858 AngularRateMeasurementLatency 255;
+BA_ "SPN" SG_ 2364549858 AngularRateMeasurementLatency 4989;
+BA_ "SigType" SG_ 2364549858 YawRateFigureOfMerit 4;
+BA_ "GenSigSendType" SG_ 2364549858 YawRateFigureOfMerit 0;
+BA_ "GenSigInactiveValue" SG_ 2364549858 YawRateFigureOfMerit 3;
+BA_ "SPN" SG_ 2364549858 YawRateFigureOfMerit 4988;
+BA_ "SigType" SG_ 2364549858 RollRateFigureOfMerit 4;
+BA_ "GenSigSendType" SG_ 2364549858 RollRateFigureOfMerit 0;
+BA_ "GenSigInactiveValue" SG_ 2364549858 RollRateFigureOfMerit 3;
+BA_ "SPN" SG_ 2364549858 RollRateFigureOfMerit 4987;
+BA_ "SigType" SG_ 2364549858 PitchRateFigureOfMerit 4;
+BA_ "GenSigSendType" SG_ 2364549858 PitchRateFigureOfMerit 0;
+BA_ "GenSigInactiveValue" SG_ 2364549858 PitchRateFigureOfMerit 3;
+BA_ "SPN" SG_ 2364549858 PitchRateFigureOfMerit 4986;
+BA_ "SigType" SG_ 2364549858 YawRate 2;
+BA_ "GenSigSendType" SG_ 2364549858 YawRate 0;
+BA_ "GenSigInactiveValue" SG_ 2364549858 YawRate 65535;
+BA_ "SPN" SG_ 2364549858 YawRate 4985;
+BA_ "SigType" SG_ 2364549858 RollRate 2;
+BA_ "GenSigSendType" SG_ 2364549858 RollRate 0;
+BA_ "GenSigInactiveValue" SG_ 2364549858 RollRate 65535;
+BA_ "SPN" SG_ 2364549858 RollRate 4984;
+BA_ "SigType" SG_ 2364549858 PitchRate 2;
+BA_ "GenSigSendType" SG_ 2364549858 PitchRate 0;
+BA_ "GenSigInactiveValue" SG_ 2364549858 PitchRate 65535;
+BA_ "SPN" SG_ 2364549858 PitchRate 4983;
+BA_ "SigType" SG_ 2297441762 VerticalAccelFigureOfMerit 4;
+BA_ "GenSigSendType" SG_ 2297441762 VerticalAccelFigureOfMerit 0;
+BA_ "GenSigInactiveValue" SG_ 2297441762 VerticalAccelFigureOfMerit 3;
+BA_ "SPN" SG_ 2297441762 VerticalAccelFigureOfMerit 5352;
+BA_ "SigType" SG_ 2297441762 LongitudinalAccelFigureOfMerit 4;
+BA_ "GenSigSendType" SG_ 2297441762 LongitudinalAccelFigureOfMerit 0;
+BA_ "GenSigInactiveValue" SG_ 2297441762 LongitudinalAccelFigureOfMerit 3;
+BA_ "SPN" SG_ 2297441762 LongitudinalAccelFigureOfMerit 5351;
+BA_ "SigType" SG_ 2297441762 LateralAccelFigureOfMerit 4;
+BA_ "GenSigSendType" SG_ 2297441762 LateralAccelFigureOfMerit 0;
+BA_ "GenSigInactiveValue" SG_ 2297441762 LateralAccelFigureOfMerit 3;
+BA_ "SPN" SG_ 2297441762 LateralAccelFigureOfMerit 5350;
+BA_ "SigType" SG_ 2297441762 VerticalAcceleration 2;
+BA_ "GenSigSendType" SG_ 2297441762 VerticalAcceleration 0;
+BA_ "SPN" SG_ 2297441762 VerticalAcceleration 5349;
+BA_ "SigType" SG_ 2297441762 LongitudinalAcceleration 2;
+BA_ "GenSigSendType" SG_ 2297441762 LongitudinalAcceleration 0;
+BA_ "SPN" SG_ 2297441762 LongitudinalAcceleration 5348;
+BA_ "SigType" SG_ 2297441762 LateralAcceleration 2;
+BA_ "GenSigSendType" SG_ 2297441762 LateralAcceleration 0;
+BA_ "SPN" SG_ 2297441762 LateralAcceleration 5347;
+VAL_ 2364549602 RollAngleFigureOfMerit 3 "Not Available" 2 "Error" 1 "Degraded" 0 "Normal" ;
+VAL_ 2364549602 RollAngleCompensation 3 "Not Available" 2 "reserved" 1 "Compensation Enabled" 0 "Compensation Disabled" ;
+VAL_ 2364549602 PitchAngleFigureOfMerit 3 "Not Available" 2 "Error" 1 "Degraded" 0 "Normal" ;
+VAL_ 2364549602 PitchAngleCompensation 3 "Not Available" 2 "reserved" 1 "Compensation Enabled" 0 "Compensation Disabled" ;
+VAL_ 2364549858 YawRateFigureOfMerit 3 "Not Available" 2 "Error" 1 "Degraded" 0 "Normal" ;
+VAL_ 2364549858 RollRateFigureOfMerit 3 "Not Available" 2 "Error" 1 "Degraded" 0 "Normal" ;
+VAL_ 2364549858 PitchRateFigureOfMerit 3 "Not Available" 2 "Error" 1 "Degraded" 0 "Normal" ;
+VAL_ 2297441762 VerticalAccelFigureOfMerit 3 "Not Available" 2 "Error" 1 "Degraded" 0 "Normal" ;
+VAL_ 2297441762 LongitudinalAccelFigureOfMerit 3 "Not Available" 2 "Error" 1 "Degraded" 0 "Normal" ;
+VAL_ 2297441762 LateralAccelFigureOfMerit 3 "Not Available" 2 "Error" 1 "Degraded" 0 "Normal" ;
+

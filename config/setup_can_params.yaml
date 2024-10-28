@@ -1,0 +1,5 @@
+frame_id: "imu_1"
+sensor_name: "imu_1"
+device_ID: 227
+can_sub_topic: "/from_can_bus"
+pub_topic_can: "/to_can_bus"

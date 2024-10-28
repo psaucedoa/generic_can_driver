@@ -39,12 +39,17 @@
 #include "sensor_msgs/msg/temperature.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
+#include "j1939_interfaces/msg/can_data.hpp"
+
 #include "can_dbc_parser/Dbc.hpp"
 #include "can_dbc_parser/DbcBuilder.hpp"
 #include "can_dbc_parser/DbcMessage.hpp"
 #include "can_dbc_parser/DbcSignal.hpp"
 
-using LifecycleNodeInterface = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface;
+#include <boost/lexical_cast.hpp>
+
+using namespace std::chrono_literals;
+using LNI = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface;
 namespace rlc = rclcpp_lifecycle;
 
 namespace ros2_j1939
@@ -56,6 +61,46 @@ public:
   explicit GenericCanDriver(const rclcpp::NodeOptions & OPTIONS);
 
   ~GenericCanDriver();
+
+  /**
+   * @brief Configures the driver. Sets up dbc database, configures publishers.
+  */
+  LNI::CallbackReturn on_configure(const rlc::State & state);
+
+  /**
+   * @brief Activates the driver. Activates publishers.
+  */
+  LNI::CallbackReturn on_activate(const rlc::State & state);
+
+  /**
+   * @brief Deactivates the driver. Deactivates publishers.
+  */
+  LNI::CallbackReturn on_deactivate(const rlc::State & state);
+
+  /**
+   * @brief Performs Cleanup on the driver node. Resets to "as-new" state
+  */
+  LNI::CallbackReturn on_cleanup(const rlc::State & state);
+
+  /**
+   * @brief Shutsdown the driver.
+  */
+  LNI::CallbackReturn on_shutdown(const rlc::State & state);
+
+  /**
+   * @brief Parses incoming CAN frames.
+   * 
+   * 1. Checks if incoming frame is valid and has a matching device ID (as set in params)
+   * 
+   * 2. Passes can frame to a local constant
+   * 
+   * 3. Checks if the message exists in the dbc
+   * 
+   * 4. Stuffs a CanData value-key message
+   * 
+   * 5. Publishes that message on the message topic
+   */
+  void rxFrame(const can_msgs::msg::Frame::SharedPtr MSG);
 
   // DATABASE MANAGEMENT FUNCTIONS //
   /**
@@ -99,7 +144,6 @@ public:
     std::array<uint8_t, 8UL> &data_out
   );
 
-
   // /** 
   //  * @brief Generic function that publishes ros2 CAN frames
   //  *
@@ -125,6 +169,19 @@ public:
   std::array<uint8_t, 8UL> device_name_;
 
   bool heartbeat_flag_;
+
+  std::vector<std::string> dbc_messages_;
+  std::map<uint32_t , NewEagle::DbcMessage> dbc_id_msg_map_;
+  std::map<std::string , NewEagle::DbcMessage> dbc_name_msg_map_;
+  can_msgs::msg::Frame incoming_frame_;
+  int message_num_ = 0;
+  std::map<std::string, std::shared_ptr<rlc::LifecyclePublisher<
+    j1939_interfaces::msg::CanData>>> publishers_;
+  std::string device_ID_str_;
+  std::string sub_topic_can_;
+  std::string pub_topic_can_;
+
+  rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr sub_can_;
 };
 
 }  // namespace generic_can_driver

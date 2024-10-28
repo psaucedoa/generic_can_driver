@@ -28,10 +28,179 @@ namespace ros2_j1939
 {
 
 GenericCanDriver::GenericCanDriver(const rclcpp::NodeOptions & OPTIONS)
-: rclcpp_lifecycle::LifecycleNode("generic_driver_node", OPTIONS)
-{}
+: rclcpp_lifecycle::LifecycleNode("generic_can_driver", OPTIONS)
+{
+  // params
+  dbw_dbc_file_ = this->declare_parameter<std::string>("dbw_dbc_file", "");
+  frame_id_ = this->declare_parameter<std::string>("frame_id", "");
+  sensor_name_ = this->declare_parameter<std::string>("sensor_name", "");
+  device_ID_ = this->declare_parameter<uint8_t>("device_ID", 0);
+  sub_topic_can_ = this->declare_parameter<std::string>("can_sub_topic", "");
+  pub_topic_can_ = this->declare_parameter<std::string>("pub_topic_can", "");
+
+  device_ID_str_ = boost::lexical_cast<std::string>(static_cast<int>(device_ID_));
+
+  RCLCPP_INFO(this->get_logger(), "dbw_dbc_file: %s", dbw_dbc_file_.c_str());
+  RCLCPP_INFO(this->get_logger(), "frame_id: %s", frame_id_.c_str());
+  RCLCPP_INFO(this->get_logger(), "sensor_name: %s", sensor_name_.c_str());
+  RCLCPP_INFO(this->get_logger(), "device_id: %d", device_ID_);
+  RCLCPP_INFO(this->get_logger(), "sub_topic_can: %s", sub_topic_can_.c_str());
+  RCLCPP_INFO(this->get_logger(), "pub_topic_can: %s", pub_topic_can_.c_str());
+//   RCLCPP_INFO(this->get_logger(), "pub_topic_joint: %s", pub_topic_joint_.c_str());
+}
 
 GenericCanDriver::~GenericCanDriver() {}
+
+// ROS2 LIFECYCLE MANAGEMENT //
+LNI::CallbackReturn GenericCanDriver::on_configure(const rlc::State & state)
+{
+  LNI::on_configure(state);
+  try
+  {
+    setupDatabase();
+
+    // setup subscribers
+    sub_can_ = this->create_subscription<can_msgs::msg::Frame>(
+        sub_topic_can_, 500, std::bind(&GenericCanDriver::rxFrame, this,
+        std::placeholders::_1));
+
+    // setup publishers
+    this->configurePublishers();
+  }
+  catch(const std::exception& e)
+  {
+    RCLCPP_ERROR(this->get_logger(), "Error w/ on_configure: %s", e.what());
+    return LNI::CallbackReturn::FAILURE;
+  }
+  
+  RCLCPP_DEBUG(this->get_logger(), "Setup Configured!");
+
+  return LNI::CallbackReturn::SUCCESS;
+}
+
+LNI::CallbackReturn GenericCanDriver::on_activate(const rlc::State & state)
+{
+  LNI::on_activate(state);
+  // when driver activates, configrue the device
+
+  activatePublishers();
+
+  RCLCPP_DEBUG(this->get_logger(), "Setup Driver activated.");
+  return LNI::CallbackReturn::SUCCESS;
+}
+
+LNI::CallbackReturn GenericCanDriver::on_deactivate(const rlc::State & state)
+{
+  // (void)state;
+
+  LNI::on_deactivate(state);
+
+  deactivatePublishers();
+
+
+  RCLCPP_DEBUG(this->get_logger(), "Setup Driver Deactivated.");
+  return LNI::CallbackReturn::SUCCESS;
+}
+
+LNI::CallbackReturn GenericCanDriver::on_cleanup(const rlc::State & state)
+{
+  // (void)state;
+
+  LNI::on_cleanup(state);
+
+  RCLCPP_DEBUG(this->get_logger(), "Setup Driver Cleaned Up.");
+  return LNI::CallbackReturn::SUCCESS;
+}
+
+LNI::CallbackReturn GenericCanDriver::on_shutdown(const rlc::State & state)
+{
+  // (void)state;
+
+  LNI::on_shutdown(state);
+
+  RCLCPP_DEBUG(this->get_logger(), "Setup Driver Shutting Down.");
+  return LNI::CallbackReturn::SUCCESS;
+}
+// END ROS2 LIFECYCLE MANAGEMENT //
+
+// CANUSB COMMS FUNCTIONS //
+void GenericCanDriver::rxFrame(const can_msgs::msg::Frame::SharedPtr MSG)
+{
+  if(!MSG->is_rtr && !MSG->is_error && (device_ID_ == (MSG->id & 0x000000FFu)))
+  {
+    const can_msgs::msg::Frame::SharedPtr incoming_MSG = MSG;
+
+    if(dbc_id_msg_map_.count(MSG->id & 0x00FFFF00u) )
+    {
+      // RCLCPP_INFO(this->get_logger(), "Key: %s", msg_name.c_str());
+
+      j1939_interfaces::msg::CanData can_data;
+
+      NewEagle::DbcMessage message = dbc_id_msg_map_[incoming_MSG->id & 0x00FFFF00u];
+      message.SetFrame(incoming_MSG);
+
+      can_data.header.stamp = this->now();
+      can_data.header.frame_id = sensor_name_;
+      can_data.message_name = message.GetName();
+      can_data.hardware_id = device_ID_str_;
+
+      std::map<std::string, NewEagle::DbcSignal> signals_map = *message.GetSignals();
+      for (auto [key_signal, value_signal] : signals_map)
+      {
+        double result = message.GetSignal(key_signal)->GetResult();
+        j1939_interfaces::msg::KeyFloatValue key_float_value;
+        key_float_value.key = key_signal;
+        key_float_value.value = result;
+        can_data.values.push_back(key_float_value);
+      }
+
+      std::string msg_name = dbc_id_msg_map_[incoming_MSG->id & 0x00FFFF00u].GetName();
+
+      publishers_[msg_name]->publish(can_data);
+    }
+  }
+}
+// END CANUSB COMMS FUNCTIONS //
+// BEGIN MANAGEMENT FUNCTIONS //
+void GenericCanDriver::setupDatabase()
+{
+  dbw_dbc_db_ = NewEagle::DbcBuilder().NewDbc(dbw_dbc_file_);
+  dbc_name_msg_map_ = * dbw_dbc_db_.GetMessages();
+
+  for (auto [key, value] : dbc_name_msg_map_)
+  {
+    // strip id of priority and source address info
+    uint32_t stripped_id = value.GetId() & 0x00FFFF00u;
+    dbc_id_msg_map_[stripped_id] = value;
+  }
+}
+
+void GenericCanDriver::configurePublishers()
+{
+  for (auto [key_message, value_message] : dbc_name_msg_map_)
+  {
+    RCLCPP_DEBUG(this->get_logger(), "Configuring Publishers - found key_message: %s", key_message.c_str());
+    publishers_[key_message] = this->create_publisher<j1939_interfaces::msg::CanData>(sensor_name_ + "/" + key_message, 20);
+  }
+}
+
+void GenericCanDriver::activatePublishers()
+{
+  for (auto [name, publisher] : publishers_)
+  {
+    RCLCPP_DEBUG(this->get_logger(), "Activating Publisher: %s", name.c_str());
+    publisher->on_activate();
+  }
+}
+
+void GenericCanDriver::deactivatePublishers()
+{
+  for (auto [name, publisher] : publishers_)
+  {
+    RCLCPP_DEBUG(this->get_logger(), "Deactivating Publisher: %s", name.c_str());
+    publisher->on_deactivate();
+  }
+}
 
 // ADDRESS MANAGEMENT FUNCTIONS //
 

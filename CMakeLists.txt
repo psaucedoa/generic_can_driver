@@ -11,7 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
+# find dependencies
 find_package(ament_cmake_auto REQUIRED)
+find_package(can_dbc_parser REQUIRED)
+find_package(j1939_interfaces)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(
