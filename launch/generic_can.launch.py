@@ -17,33 +17,33 @@ def generate_launch_description():
 
     #### Socketcan Receiver CAN0 Config ####
 
-    _CAN0_PARAMS_FILE = os.path.join(
-      get_package_share_directory('bringup'),
-      'params',
-      'socketcan_can0_params.yaml'
+    _CAN_PARAMS_FILE = os.path.join(
+      get_package_share_directory('generic_can_driver'),
+      'config',
+      'socketcan_params.yaml'
     )
 
-    with open(_CAN0_PARAMS_FILE, 'r') as file:
-      can0_params = yaml.safe_load(file)
+    with open(_CAN_PARAMS_FILE, 'r') as file:
+      can_params = yaml.safe_load(file)
 
 
-    socket_can_receiver_can0_node = LifecycleNode(
+    socket_can_receiver_can_node = LifecycleNode(
         package='ros2_socketcan',
         executable='socket_can_receiver_node_exe',
         name='socket_can_receiver_can0',
         namespace=TextSubstitution(text=''),
         parameters=[
-            can0_params
+            can_params
         ],
         output='screen')
 
-    socket_can_receiver_can0_configure_event_handler = RegisterEventHandler(
+    socket_can_receiver_can_configure_event_handler = RegisterEventHandler(
         event_handler=OnProcessStart(
-            target_action=socket_can_receiver_can0_node,
+            target_action=socket_can_receiver_can_node,
             on_start=[
                 EmitEvent(
                     event=ChangeState(
-                        lifecycle_node_matcher=matches_action(socket_can_receiver_can0_node),
+                        lifecycle_node_matcher=matches_action(socket_can_receiver_can_node),
                         transition_id=Transition.TRANSITION_CONFIGURE,
                     ),
                 ),
@@ -54,13 +54,13 @@ def generate_launch_description():
 
     socket_can_receiver_can0_activate_event_handler = RegisterEventHandler(
         event_handler=OnStateTransition(
-            target_lifecycle_node=socket_can_receiver_can0_node,
+            target_lifecycle_node=socket_can_receiver_can_node,
             start_state='configuring',
             goal_state='inactive',
             entities=[
                 EmitEvent(
                     event=ChangeState(
-                        lifecycle_node_matcher=matches_action(socket_can_receiver_can0_node),
+                        lifecycle_node_matcher=matches_action(socket_can_receiver_can_node),
                         transition_id=Transition.TRANSITION_ACTIVATE,
                     ),
                 ),
@@ -118,7 +118,7 @@ def generate_launch_description():
 
     _GENERIC_CAN_PARAMS_FILE = os.path.join(
       get_package_share_directory('generic_can_driver'),
-      'params',
+      'config',
       'generic_can_params.yaml'
     )
 
@@ -180,8 +180,8 @@ def generate_launch_description():
         socket_can_sender_node,
         socket_can_sender_configure_event_handler,
         socket_can_sender_activate_event_handler,
-        socket_can_receiver_can0_node,
-        socket_can_receiver_can0_configure_event_handler,
+        socket_can_receiver_can_node,
+        socket_can_receiver_can_configure_event_handler,
         socket_can_receiver_can0_activate_event_handler,
         generic_can_node,
         generic_can_configure_event_handler,
