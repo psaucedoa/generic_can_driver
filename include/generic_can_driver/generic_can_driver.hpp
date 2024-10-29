@@ -160,21 +160,10 @@ public:
   std::string frame_id_;      // such as: base, etc.
   std::string sensor_name_;   // such as: /Imu/microstrain/joint_1_L, or w/e
   uint8_t device_ID_;         // such as 226
-  bool address_claim_attack_;
-  std::vector<long int> addressess_to_claim_attack_;
   NewEagle::Dbc dbw_dbc_db_;   // new eagle dbc database
 
-  bool set_new_source_address_;
-  uint8_t new_source_address_;
-  std::array<uint8_t, 8UL> device_name_;
-
-  bool heartbeat_flag_;
-
-  std::vector<std::string> dbc_messages_;
   std::map<uint32_t , NewEagle::DbcMessage> dbc_id_msg_map_;
   std::map<std::string , NewEagle::DbcMessage> dbc_name_msg_map_;
-  can_msgs::msg::Frame incoming_frame_;
-  int message_num_ = 0;
   std::map<std::string, std::shared_ptr<rlc::LifecyclePublisher<
     j1939_interfaces::msg::CanData>>> publishers_;
   std::string device_ID_str_;

@@ -57,11 +57,11 @@ LNI::CallbackReturn GenericCanDriver::on_configure(const rlc::State & state)
   LNI::on_configure(state);
   try
   {
-    setupDatabase();
+    this->setupDatabase();
 
     // setup subscribers
-    sub_can_ = this->create_subscription<can_msgs::msg::Frame>(
-        sub_topic_can_, 500, std::bind(&GenericCanDriver::rxFrame, this,
+    this->sub_can_ = this->create_subscription<can_msgs::msg::Frame>(
+        this->sub_topic_can_, 500, std::bind(&GenericCanDriver::rxFrame, this,
         std::placeholders::_1));
 
     // setup publishers
@@ -73,7 +73,7 @@ LNI::CallbackReturn GenericCanDriver::on_configure(const rlc::State & state)
     return LNI::CallbackReturn::FAILURE;
   }
   
-  RCLCPP_DEBUG(this->get_logger(), "Setup Configured!");
+  RCLCPP_DEBUG(this->get_logger(), "Generic Can Driver Configured!");
 
   return LNI::CallbackReturn::SUCCESS;
 }
@@ -83,9 +83,9 @@ LNI::CallbackReturn GenericCanDriver::on_activate(const rlc::State & state)
   LNI::on_activate(state);
   // when driver activates, configrue the device
 
-  activatePublishers();
+  this->activatePublishers();
 
-  RCLCPP_DEBUG(this->get_logger(), "Setup Driver activated.");
+  RCLCPP_DEBUG(this->get_logger(), "Generic Can Driver Activated.");
   return LNI::CallbackReturn::SUCCESS;
 }
 
@@ -96,7 +96,6 @@ LNI::CallbackReturn GenericCanDriver::on_deactivate(const rlc::State & state)
   LNI::on_deactivate(state);
 
   deactivatePublishers();
-
 
   RCLCPP_DEBUG(this->get_logger(), "Setup Driver Deactivated.");
   return LNI::CallbackReturn::SUCCESS;
@@ -126,37 +125,46 @@ LNI::CallbackReturn GenericCanDriver::on_shutdown(const rlc::State & state)
 // CANUSB COMMS FUNCTIONS //
 void GenericCanDriver::rxFrame(const can_msgs::msg::Frame::SharedPtr MSG)
 {
+  // if message is not a request, error, and matches device ID
   if(!MSG->is_rtr && !MSG->is_error && (device_ID_ == (MSG->id & 0x000000FFu)))
   {
+    // local const to store incoming message
     const can_msgs::msg::Frame::SharedPtr incoming_MSG = MSG;
 
+    // if the message type / PGN is found in the dbc
     if(dbc_id_msg_map_.count(MSG->id & 0x00FFFF00u) )
     {
       // RCLCPP_INFO(this->get_logger(), "Key: %s", msg_name.c_str());
 
+      // then create a local ros2 message
       j1939_interfaces::msg::CanData can_data;
 
+      // translate the message data
       NewEagle::DbcMessage message = dbc_id_msg_map_[incoming_MSG->id & 0x00FFFF00u];
       message.SetFrame(incoming_MSG);
 
+      // populate the local ros2 message header, frame, and message name
       can_data.header.stamp = this->now();
       can_data.header.frame_id = sensor_name_;
       can_data.message_name = message.GetName();
       can_data.hardware_id = device_ID_str_;
 
+      // get the signals (e.g. x, y, z) within the message (e.g. acceleration)
       std::map<std::string, NewEagle::DbcSignal> signals_map = *message.GetSignals();
       for (auto [key_signal, value_signal] : signals_map)
       {
+        // get the data for the current signal
         double result = message.GetSignal(key_signal)->GetResult();
+        
+        // populate the local ros2 message
         j1939_interfaces::msg::KeyFloatValue key_float_value;
         key_float_value.key = key_signal;
         key_float_value.value = result;
         can_data.values.push_back(key_float_value);
       }
 
-      std::string msg_name = dbc_id_msg_map_[incoming_MSG->id & 0x00FFFF00u].GetName();
-
-      publishers_[msg_name]->publish(can_data);
+      // publish finalized message
+      publishers_[message.GetName()]->publish(can_data);
     }
   }
 }
@@ -164,9 +172,11 @@ void GenericCanDriver::rxFrame(const can_msgs::msg::Frame::SharedPtr MSG)
 // BEGIN MANAGEMENT FUNCTIONS //
 void GenericCanDriver::setupDatabase()
 {
-  dbw_dbc_db_ = NewEagle::DbcBuilder().NewDbc(dbw_dbc_file_);
-  dbc_name_msg_map_ = * dbw_dbc_db_.GetMessages();
+  // build the new eagle dbc database
+  this->dbw_dbc_db_ = NewEagle::DbcBuilder().NewDbc(dbw_dbc_file_);
+  this->dbc_name_msg_map_ = * this->dbw_dbc_db_.GetMessages();
 
+  // for every message in the database, leave only PGN
   for (auto [key, value] : dbc_name_msg_map_)
   {
     // strip id of priority and source address info
@@ -249,25 +259,6 @@ void GenericCanDriver::generateAddressClaimAttackMsg(
     MSG->data = claim_data;
   }
 }
-
-
-// void GenericCanDriver::setupDatabase(NewEagle::Dbc dbw_dbc_db, const std::string dbw_dbc_file)
-// {
-//   dbw_dbc_db = NewEagle::DbcBuilder().NewDbc(dbw_dbc_file);
-
-// }
-
-// void GenericCanDriver::setupMap()
-// {
-//   dbc_name_msg_map_ = * dbw_dbc_db_.GetMessages();
-
-//   for (auto [key, value] : dbc_name_msg_map_)
-//   {
-//     // strip id of priority and source address info
-//     uint32_t stripped_id = value.GetId() & 0x00FFFF00u;
-//     dbc_id_msg_map_[stripped_id] = value;
-//   }
-// }
 
 // TODO:Arturo - Look through this and make sure it's the standard way of renaming CAN devices
 // also, this could just be its own .log file or something idk
