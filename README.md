@@ -11,6 +11,10 @@ ros2_socketcan to decode incoming CAN frames live.
 
 ## Setup
 
+All you need is a device and a DBC! 
+
+> The whole J1939 standard dbc will work - this takes care of using the correct messages for your device
+
 1. Get a J1939 device (like some sensor)
 
 2. Physically connect and power the sensor
@@ -42,6 +46,18 @@ ros2_socketcan to decode incoming CAN frames live.
 
 6. Launch `ros2 launch generic_can_driver generic_can.launch.py`
 
+## Walkthrough
+
+1. on_configure() 
+    1. setupDatabase()
+       1. dbc_pgns_
+    2. configurePublishers()
+2. on_activate()
+    1. activatePublishers()
+    2. subscribe to can bus 
+    3. bind rxFrame()
+3. rxFrame() loop
+
 ## FAQ
 
  1. Can you launch this node **multiple** times?
@@ -67,13 +83,18 @@ ros2_socketcan to decode incoming CAN frames live.
 5. Why does it use this custom message?
     > Again, the motivation for this simple driver was to create a quick way to bring in human-
     readable data from a J1939 sensor into ROS2. For a specific implementation, which outputs a 
-    "correct" message type (like an IMU sensor message), have a look at our device-specific driver
+    "correct" message type (like an IMU sensor message), have a look at device-specific driver
     implementations.
 
 6. How are the publishers set up?
    > On configure, the driver parses the (**user-provided**) dbc file and spins up one publisher per
    dbc message defined within that file. So if you have three dbc messages, this creates three 
    publishers, with the topics automatically named according to `/device_name/message_name`
+
+7. The values of some of my data are constant and REALLY large, why?
+   > Sometimes if a field is empty or erroring, that field ("signal") of the message will simply 
+   hold the max possible value. So if your temperature is in a range of `[0,202]`, an error (such as
+    no sensor, sensor malfunction, etc.) will populate that temperature field with `202`.
 
 ## Errors
 

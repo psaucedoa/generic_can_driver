@@ -30,48 +30,52 @@ namespace ros2_j1939
 GenericCanDriver::GenericCanDriver(const rclcpp::NodeOptions & OPTIONS)
 : rclcpp_lifecycle::LifecycleNode("generic_can_driver", OPTIONS)
 {
-  // params
+
+}
+
+GenericCanDriver::~GenericCanDriver() {}
+
+// BGN ROS2 LIFECYCLE MANAGEMENT //
+LNI::CallbackReturn GenericCanDriver::on_configure(const rlc::State & state)
+{
+  RCLCPP_INFO(this->get_logger(), "Configuring...");
+
+  LNI::on_configure(state);
+
   dbw_dbc_file_ = this->declare_parameter<std::string>("dbw_dbc_file", "");
   frame_id_ = this->declare_parameter<std::string>("frame_id", "");
   sensor_name_ = this->declare_parameter<std::string>("sensor_name", "");
   device_ID_ = this->declare_parameter<uint8_t>("device_ID", 0);
+  can_interface_ = this->declare_parameter<std::string>("can_interface", "can0");
   sub_topic_can_ = this->declare_parameter<std::string>("can_sub_topic", "");
   pub_topic_can_ = this->declare_parameter<std::string>("pub_topic_can", "");
-
+  search_queue_ = this->declare_parameter<int>("search_queue", 0);
+  use_full_dbc_ = this->declare_parameter<bool>("use_full_dbc", false);
+  
   device_ID_str_ = boost::lexical_cast<std::string>(static_cast<int>(device_ID_));
 
+  // printing to user
   RCLCPP_INFO(this->get_logger(), "dbw_dbc_file: %s", dbw_dbc_file_.c_str());
   RCLCPP_INFO(this->get_logger(), "frame_id: %s", frame_id_.c_str());
   RCLCPP_INFO(this->get_logger(), "sensor_name: %s", sensor_name_.c_str());
   RCLCPP_INFO(this->get_logger(), "device_id: %d", device_ID_);
   RCLCPP_INFO(this->get_logger(), "sub_topic_can: %s", sub_topic_can_.c_str());
   RCLCPP_INFO(this->get_logger(), "pub_topic_can: %s", pub_topic_can_.c_str());
-//   RCLCPP_INFO(this->get_logger(), "pub_topic_joint: %s", pub_topic_joint_.c_str());
-}
+  
+  // setup dbc database - brings in j1939 standard
+  this->setupDatabase();
+  RCLCPP_INFO(this->get_logger(), "Setup DBC Database");
 
-GenericCanDriver::~GenericCanDriver() {}
-
-// ROS2 LIFECYCLE MANAGEMENT //
-LNI::CallbackReturn GenericCanDriver::on_configure(const rlc::State & state)
-{
-  LNI::on_configure(state);
-  try
+  // find IDs present in the CAN data stream...
+  while(!this->database_decimated_ && !this->use_full_dbc_)
   {
-    this->setupDatabase();
-
-    // setup subscribers
-    this->sub_can_ = this->create_subscription<can_msgs::msg::Frame>(
-        this->sub_topic_can_, 500, std::bind(&GenericCanDriver::rxFrame, this,
-        std::placeholders::_1));
-
-    // setup publishers
-    this->configurePublishers();
+    // ... and then decimate the dbc database to only contain messages seen in CAN data stream
+    rxSearchIDs();
+    RCLCPP_INFO(this->get_logger(), "Decimated DBC Database");
   }
-  catch(const std::exception& e)
-  {
-    RCLCPP_ERROR(this->get_logger(), "Error w/ on_configure: %s", e.what());
-    return LNI::CallbackReturn::FAILURE;
-  }
+  
+  // automatically configure publishers
+  this->configurePublishers();
   
   RCLCPP_DEBUG(this->get_logger(), "Generic Can Driver Configured!");
 
@@ -81,9 +85,14 @@ LNI::CallbackReturn GenericCanDriver::on_configure(const rlc::State & state)
 LNI::CallbackReturn GenericCanDriver::on_activate(const rlc::State & state)
 {
   LNI::on_activate(state);
-  // when driver activates, configrue the device
 
+  // activate all configured publishers
   this->activatePublishers();
+
+  // setup subscriber, bind rxFrame
+  this->sub_can_ = this->create_subscription<can_msgs::msg::Frame>(
+      this->sub_topic_can_, 500, std::bind(&GenericCanDriver::rxFrame, this,
+      std::placeholders::_1));
 
   RCLCPP_DEBUG(this->get_logger(), "Generic Can Driver Activated.");
   return LNI::CallbackReturn::SUCCESS;
@@ -91,38 +100,88 @@ LNI::CallbackReturn GenericCanDriver::on_activate(const rlc::State & state)
 
 LNI::CallbackReturn GenericCanDriver::on_deactivate(const rlc::State & state)
 {
-  // (void)state;
-
   LNI::on_deactivate(state);
 
-  deactivatePublishers();
+  // deactivate all publishers  
+  this->deactivatePublishers();
 
-  RCLCPP_DEBUG(this->get_logger(), "Setup Driver Deactivated.");
+  RCLCPP_DEBUG(this->get_logger(), "Generic Can Driver Deactivated.");
   return LNI::CallbackReturn::SUCCESS;
 }
 
 LNI::CallbackReturn GenericCanDriver::on_cleanup(const rlc::State & state)
 {
-  // (void)state;
-
   LNI::on_cleanup(state);
 
-  RCLCPP_DEBUG(this->get_logger(), "Setup Driver Cleaned Up.");
+  RCLCPP_DEBUG(this->get_logger(), "Generic Can Driver Cleaned Up.");
   return LNI::CallbackReturn::SUCCESS;
 }
 
 LNI::CallbackReturn GenericCanDriver::on_shutdown(const rlc::State & state)
 {
-  // (void)state;
-
   LNI::on_shutdown(state);
 
-  RCLCPP_DEBUG(this->get_logger(), "Setup Driver Shutting Down.");
+  RCLCPP_DEBUG(this->get_logger(), "Generic Can Driver Shutting Down.");
   return LNI::CallbackReturn::SUCCESS;
 }
 // END ROS2 LIFECYCLE MANAGEMENT //
 
-// CANUSB COMMS FUNCTIONS //
+// BGN CANUSB COMMS FUNCTIONS //
+void GenericCanDriver::rxSearchIDs()
+{
+  // setup a direct connection to the CAN line (since pub/sub stuff would still have to activate)
+  std::unique_ptr<drivers::can::CanDriver> rx_can = std::make_unique<drivers::can::CanDriver>();
+  rx_can->setupConnection(this->can_interface_.c_str());
+  
+  // loop over the amount of messages specified in the search_queue_ param 
+  while(this->message_count_ < this->search_queue_)
+  {
+    // grab the CAN ID of the current message
+    uint32_t incoming_ID = rx_can->receive().can_id;
+
+    // make sure it's the correct source address (should prob just add a filter at the socket level)
+    if((device_ID_ == (incoming_ID & 0x000000FFu)))
+    {
+      // add to found_ids_ map, updating the message count or creating a key if not already present
+      this->found_ids_[incoming_ID & 0x00FFFF00u]++;
+    }
+    this->message_count_++;
+  }
+
+  // close the direct socket can connection
+  rx_can->closeConnection();
+
+  // create a copy to iterate over
+  const std::map<uint32_t, NewEagle::DbcMessage> dbc_id_msg_map_copy = this->dbc_id_msg_map_; 
+  for (auto [key, value] : dbc_id_msg_map_copy)
+  {
+    // if we did not see the key in any of the incoming CAN frames
+    if (this->found_ids_.count(key) == 0)
+    {
+      // get the name of the message
+      std::string message_name = this->dbc_id_msg_map_[key].GetName();
+      // RCLCPP_INFO(this->get_logger(), "GETNAME: %s", message_name.c_str());
+
+      // use this name as the key to delete it from the dbc_name_msg_map_ 
+      // (this is used to generate publishers later on)
+      this->dbc_name_msg_map_.erase(message_name);
+      
+      // then delete it from the id map
+      this->dbc_id_msg_map_.erase(key);
+    }
+    else
+    {}
+  }
+  RCLCPP_INFO(this->get_logger(), "Found %ld unique IDs on CAN interface", dbc_id_msg_map_.size());
+  this->database_decimated_ = true;
+  
+  // print found IDs to user
+  for(auto [key, value] : this->dbc_id_msg_map_)
+  {
+    RCLCPP_INFO(this->get_logger(), "REMAINING Ids | KEY: %ld VALUE: %s", key, value.GetName().c_str());
+  }
+}
+
 void GenericCanDriver::rxFrame(const can_msgs::msg::Frame::SharedPtr MSG)
 {
   // if message is not a request, error, and matches device ID
@@ -169,6 +228,7 @@ void GenericCanDriver::rxFrame(const can_msgs::msg::Frame::SharedPtr MSG)
   }
 }
 // END CANUSB COMMS FUNCTIONS //
+
 // BEGIN MANAGEMENT FUNCTIONS //
 void GenericCanDriver::setupDatabase()
 {
@@ -187,6 +247,7 @@ void GenericCanDriver::setupDatabase()
 
 void GenericCanDriver::configurePublishers()
 {
+  // iterate over the dbc to spawn an equal amount of publishers
   for (auto [key_message, value_message] : dbc_name_msg_map_)
   {
     RCLCPP_DEBUG(this->get_logger(), "Configuring Publishers - found key_message: %s", key_message.c_str());
@@ -196,6 +257,7 @@ void GenericCanDriver::configurePublishers()
 
 void GenericCanDriver::activatePublishers()
 {
+  // activate all publishers
   for (auto [name, publisher] : publishers_)
   {
     RCLCPP_DEBUG(this->get_logger(), "Activating Publisher: %s", name.c_str());
@@ -205,14 +267,13 @@ void GenericCanDriver::activatePublishers()
 
 void GenericCanDriver::deactivatePublishers()
 {
+  // deactivate all publishers
   for (auto [name, publisher] : publishers_)
   {
     RCLCPP_DEBUG(this->get_logger(), "Deactivating Publisher: %s", name.c_str());
     publisher->on_deactivate();
   }
 }
-
-// ADDRESS MANAGEMENT FUNCTIONS //
 
 void GenericCanDriver::createDataArray(
   const std::vector<uint16_t> data_in, const std::vector<uint16_t> data_lengths, 
@@ -259,6 +320,8 @@ void GenericCanDriver::generateAddressClaimAttackMsg(
     MSG->data = claim_data;
   }
 }
+
+// END MANAGEMENT FUNCTIONS //
 
 // TODO:Arturo - Look through this and make sure it's the standard way of renaming CAN devices
 // also, this could just be its own .log file or something idk

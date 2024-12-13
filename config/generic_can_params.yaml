@@ -1,5 +1,13 @@
-frame_id: "imu_1"
-sensor_name: "imu_1"
-device_ID: 227
-can_sub_topic: "/from_can_bus"
-pub_topic_can: "/to_can_bus"
+frame_id: "body"               # physical location of your device
+sensor_name: "main_ecu"         # name of your sensor / device
+device_ID: 00                   # last two hex number of the CAN ID of your device (in decimal notation) 
+can_interface: "can0"           # name of the can interface
+can_sub_topic: "/from_can_bus"  # ros2_socketcan read-from-can topic
+pub_topic_can: "/to_can_bus"    # ros2_socketcan write-to-can topic
+
+use_full_dbc: false             # [true] - generates publishers for ALL MESSAGES IN DBC
+                                # [false] - listens to 'search_queue' amount of messages and generates
+                                #           publishers if the message is in dbc AND was seen on the CAN line
+search_queue: 300               # the amount of messages to read before creating the needed publishers
+
+dbc_file: "my_dbc.dbc"          # name of the user-provide dbc file under /launch 

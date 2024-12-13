@@ -122,16 +122,16 @@ def generate_launch_description():
       'generic_can_params.yaml'
     )
 
-    generic_can_dbc_path = get_package_share_directory('generic_can_driver') + \
-    '/launch/MV5.dbc'
-
     with open(_GENERIC_CAN_PARAMS_FILE, 'r') as file:
       generic_can_params = yaml.safe_load(file)
+
+    generic_can_dbc_path = get_package_share_directory('generic_can_driver') + \
+    '/launch/' + generic_can_params["dbc_file"]
 
     generic_can_node = LifecycleNode(
         package='generic_can_driver',
         executable='generic_can_driver_exe',
-        name='generic_imu',
+        name='generic_' + generic_can_params["sensor_name"],
         namespace=TextSubstitution(text=''),
         parameters=[
            {'dbw_dbc_file': generic_can_dbc_path},   

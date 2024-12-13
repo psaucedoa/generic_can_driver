@@ -40,6 +40,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 
 #include "j1939_interfaces/msg/can_data.hpp"
+#include "can_driver/can_driver.hpp"
 
 #include "can_dbc_parser/Dbc.hpp"
 #include "can_dbc_parser/DbcBuilder.hpp"
@@ -88,6 +89,12 @@ public:
   LNI::CallbackReturn on_shutdown(const rlc::State & state);
 
   /**
+   * @brief Notes the IDs of incoming CAN frames and modifies the dbc database to contain only the
+   * seen CAN IDs
+   */
+  void rxSearchIDs();
+
+  /**
    * @brief Parses incoming CAN frames.
    * 
    * 1. Checks if incoming frame is valid and has a matching device ID (as set in params)
@@ -119,12 +126,12 @@ public:
   void configurePublishers();
 
   /**
-   * Goes through the configured publishers and activates them
+   * @brief Goes through the configured publishers and activates them
    */
   void activatePublishers();
 
   /**
-   * Goes through the configured publishers and activates them
+   * @brief Goes through the configured publishers and activates them
    */
   void deactivatePublishers();
 
@@ -138,38 +145,36 @@ public:
     can_msgs::msg::Frame::SharedPtr MSG, const std::vector<uint32_t> source_addresses
   );
 
+  /**
+   * @brief formats data nicely for use in CAN frames
+   */
   void createDataArray(
     const std::vector<uint16_t> data_in, 
     const std::vector<uint16_t> data_lengths, 
     std::array<uint8_t, 8UL> &data_out
   );
 
-  // /** 
-  //  * @brief Generic function that publishes ros2 CAN frames
-  //  *
-  // */
-  // void txFrame(const can_msgs::msg::Frame MSG);
-
-  // /**
-  //  * @brief changes the source address of the device given its name and desired source address
-  // */
-  // void txRename(const std::array<uint8_t, 8UL> name, const uint8_t new_source_address);
-
   // params
-  std::string dbw_dbc_file_;  // set in launch file. Files such as MV5.dbc
-  std::string frame_id_;      // such as: base, etc.
-  std::string sensor_name_;   // such as: /Imu/microstrain/joint_1_L, or w/e
-  uint8_t device_ID_;         // such as 226
-  NewEagle::Dbc dbw_dbc_db_;   // new eagle dbc database
+  std::string dbw_dbc_file_;  // the messages definition (such as J1939 standard)
+  std::string frame_id_;      // used on the published messages - usually just the location of the sensor on your robot
+  std::string sensor_name_;   // name of your sensor / device (e.g. engine ECU)
+  uint8_t device_ID_;         // j1939 source address of your device, in decimal format (last 2 hex numbers of the CANID)
+  std::string device_ID_str_; // [device_ID_str_] just turning the device_id into a string. used to populate message headers
+  std::string can_interface_; // the name of the CAN line the device is on (e.g. can0)
+  int search_queue_;          // the number of CAN messages to search through during startup. Used to decimate the dbc database
+  bool use_full_dbc_;         // whether or not to use the full dbc. if false, will search can line and decimate
+                              // if true, will set up publishers for EVERY message in the provided dbc
+  std::string sub_topic_can_; // subscribe to the topic socket_can is publishing from the CAN line
+  std::string pub_topic_can_; // publish to the topic socket_can is sending to the CAN line
 
+  int message_count_ = 0;     // used to track hoe many CAN frames have been read suring startup
+  bool database_decimated_ = false;
+  NewEagle::Dbc dbw_dbc_db_;   // new eagle dbc database
   std::map<uint32_t , NewEagle::DbcMessage> dbc_id_msg_map_;
   std::map<std::string , NewEagle::DbcMessage> dbc_name_msg_map_;
+  std::map<uint32_t , int> found_ids_;
   std::map<std::string, std::shared_ptr<rlc::LifecyclePublisher<
     j1939_interfaces::msg::CanData>>> publishers_;
-  std::string device_ID_str_;
-  std::string sub_topic_can_;
-  std::string pub_topic_can_;
-
   rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr sub_can_;
 };
 
