@@ -11,6 +11,12 @@ ros2_socketcan to decode incoming CAN frames live.
 
 ## Setup
 
+`sudo apt install can-utils`
+
+`candump canX` To see data stream from network canX
+`canplayer -I xxx.log` To stream data from a saved log file
+`candump -l` To record data to a log file
+
 All you need is a device and a DBC! 
 
 > The whole J1939 standard dbc will work - this takes care of using the correct messages for your device
@@ -58,6 +64,9 @@ All you need is a device and a DBC!
     3. bind rxFrame()
 3. rxFrame() loop
 
+### Configure
+
+
 ## FAQ
 
  1. Can you launch this node **multiple** times?
@@ -75,8 +84,8 @@ All you need is a device and a DBC!
      and **IDs** in each node's config.
 
 4. What message type does this publish out?
-    > This publishes a `j1939_interfaces/msg/can_data.hpp` message. The message definition can be
-    found under `ros2_j1939/j1939_interfaces`. This is a key-value message type, kinda like 
+    > This publishes a `j1939_msgs/msg/can_data.hpp` message. The message definition can be
+    found under `ros2_j1939/j1939_msgs`. This is a key-value message type, kinda like 
     `diagnostic_msgs/msg/DiagnosticArray.msg` but instead of being a `string-string` key-value pair,
     this is a `string-float64` key-value pair.
 

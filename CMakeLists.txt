@@ -14,7 +14,7 @@ endif()
 # find dependencies
 find_package(ament_cmake_auto REQUIRED)
 find_package(can_dbc_parser REQUIRED)
-find_package(j1939_interfaces)
+find_package(j1939_msgs)
 find_package(can_driver)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)

@@ -75,11 +75,9 @@ def generate_launch_description():
         executable='socket_can_sender_node_exe',
         name='socket_can_sender',
         namespace=TextSubstitution(text=''),
-        parameters=[{
-            'interface': 'can0',
-            'enable_can_fd': False,
-            'timeout_sec': 0.5
-        }],
+        parameters=[
+            can_params
+        ],
         output='screen')
 
     socket_can_sender_configure_event_handler = RegisterEventHandler(
@@ -134,8 +132,8 @@ def generate_launch_description():
         name='generic_' + generic_can_params["sensor_name"],
         namespace=TextSubstitution(text=''),
         parameters=[
-           {'dbw_dbc_file': generic_can_dbc_path},   
-           generic_can_params
+           generic_can_params,
+           {'dbw_dbc_file': generic_can_dbc_path}
            ],
         output='screen',
         # arguments=["--ros-args", "--log-level", "debug"]

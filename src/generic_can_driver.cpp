@@ -52,7 +52,7 @@ LNI::CallbackReturn GenericCanDriver::on_configure(const rlc::State & state)
   search_queue_ = this->declare_parameter<int>("search_queue", 0);
   use_full_dbc_ = this->declare_parameter<bool>("use_full_dbc", false);
   
-  device_ID_str_ = boost::lexical_cast<std::string>(static_cast<int>(device_ID_));
+  device_ID_str_ = std::to_string(static_cast<int>(device_ID_));
 
   // printing to user
   RCLCPP_INFO(this->get_logger(), "dbw_dbc_file: %s", dbw_dbc_file_.c_str());
@@ -130,8 +130,8 @@ LNI::CallbackReturn GenericCanDriver::on_shutdown(const rlc::State & state)
 void GenericCanDriver::rxSearchIDs()
 {
   // setup a direct connection to the CAN line (since pub/sub stuff would still have to activate)
-  std::unique_ptr<drivers::can::CanDriver> rx_can = std::make_unique<drivers::can::CanDriver>();
-  rx_can->setupConnection(this->can_interface_.c_str());
+  std::unique_ptr<ros2_j1939::CanDriver> rx_can = std::make_unique<ros2_j1939::CanDriver>();
+  rx_can->setup_connection(this->can_interface_.c_str());
   
   // loop over the amount of messages specified in the search_queue_ param 
   while(this->message_count_ < this->search_queue_)
@@ -149,7 +149,7 @@ void GenericCanDriver::rxSearchIDs()
   }
 
   // close the direct socket can connection
-  rx_can->closeConnection();
+  rx_can->close_connection();
 
   // create a copy to iterate over
   const std::map<uint32_t, NewEagle::DbcMessage> dbc_id_msg_map_copy = this->dbc_id_msg_map_; 
@@ -196,7 +196,7 @@ void GenericCanDriver::rxFrame(const can_msgs::msg::Frame::SharedPtr MSG)
       // RCLCPP_INFO(this->get_logger(), "Key: %s", msg_name.c_str());
 
       // then create a local ros2 message
-      j1939_interfaces::msg::CanData can_data;
+      j1939_msgs::msg::CanData can_data;
 
       // translate the message data
       NewEagle::DbcMessage message = dbc_id_msg_map_[incoming_MSG->id & 0x00FFFF00u];
@@ -216,7 +216,7 @@ void GenericCanDriver::rxFrame(const can_msgs::msg::Frame::SharedPtr MSG)
         double result = message.GetSignal(key_signal)->GetResult();
         
         // populate the local ros2 message
-        j1939_interfaces::msg::KeyFloatValue key_float_value;
+        j1939_msgs::msg::KeyFloatValue key_float_value;
         key_float_value.key = key_signal;
         key_float_value.value = result;
         can_data.values.push_back(key_float_value);
@@ -251,7 +251,7 @@ void GenericCanDriver::configurePublishers()
   for (auto [key_message, value_message] : dbc_name_msg_map_)
   {
     RCLCPP_DEBUG(this->get_logger(), "Configuring Publishers - found key_message: %s", key_message.c_str());
-    publishers_[key_message] = this->create_publisher<j1939_interfaces::msg::CanData>(sensor_name_ + "/" + key_message, 20);
+    publishers_[key_message] = this->create_publisher<j1939_msgs::msg::CanData>(sensor_name_ + "/" + key_message, 20);
   }
 }
 

@@ -39,15 +39,13 @@
 #include "sensor_msgs/msg/temperature.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
-#include "j1939_interfaces/msg/can_data.hpp"
+#include "j1939_msgs/msg/can_data.hpp"
 #include "can_driver/can_driver.hpp"
 
 #include "can_dbc_parser/Dbc.hpp"
 #include "can_dbc_parser/DbcBuilder.hpp"
 #include "can_dbc_parser/DbcMessage.hpp"
 #include "can_dbc_parser/DbcSignal.hpp"
-
-#include <boost/lexical_cast.hpp>
 
 using namespace std::chrono_literals;
 using LNI = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface;
@@ -120,7 +118,7 @@ public:
   /**
    * @brief Checks the messages in the DBC and creates a publisher for each one
    * 
-   * The publishers are of type "j1939_interfaces::msg::CanData" with a topic name folling a
+   * The publishers are of type "j1939_msgs::msg::CanData" with a topic name folling a
    * "sensor_name/key_message" pattern
    */
   void configurePublishers();
@@ -174,7 +172,7 @@ public:
   std::map<std::string , NewEagle::DbcMessage> dbc_name_msg_map_;
   std::map<uint32_t , int> found_ids_;
   std::map<std::string, std::shared_ptr<rlc::LifecyclePublisher<
-    j1939_interfaces::msg::CanData>>> publishers_;
+    j1939_msgs::msg::CanData>>> publishers_;
   rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr sub_can_;
 };
 

@@ -1,4 +1,4 @@
-interface: "can0"             # name of your can interface
-receiver_interval_sec: 0.01   # 1/hz of your messages
-sender_timeout_sec: 0.01      # time between messages before socketcan sends a timeout warning
+interface: "vcan0"             # name of your can interface
+receiver_interval_sec: 1.0   # 1/hz of your messages
+sender_timeout_sec: 1.0      # time between messages before socketcan sends a timeout warning
 enable_can_fd: false
